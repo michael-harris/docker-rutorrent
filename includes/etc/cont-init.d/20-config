@@ -1,0 +1,61 @@
+#!/usr/bin/with-contenv bash
+
+# make folders
+mkdir -p \
+	/detach_sess \
+	/config{/log/rtorrent,/rtorrent/rtorrent_sess,/tmp,/log/nginx,/log/rutorrent,/nginx,/nginx/conf.d,/php,/rutorrent/settings/users,/.irssi,} \
+	/config{/rutorrent/profiles/settings,/torrents,/users,/tmp} \
+	/run{/nginx,/php} \
+	/var/lib/nginx/tmp/client_body
+
+
+# copy config
+PREV_DIR=$(pwd)
+
+cd /defaults/rutorrent-conf || exit
+	shopt -s globstar nullglob
+	for i in *
+	do
+		[[ ! -e "/config/rutorrent/settings/${i}" ]] && cp -v "${i}" "/config/rutorrent/settings/${i}"
+	done
+
+cd "${PREV_DIR}" || exit
+
+[[ ! -e /config/nginx/nginx.conf ]] && \
+	cp /defaults/nginx.conf /config/nginx/nginx.conf
+
+[[ ! -e /config/nginx/.htpasswd ]] && \
+	cp /defaults/.htpasswd /config/nginx/.htpasswd
+	
+[[ ! -e /config/rtorrent/rtorrent.rc ]] && \
+	cp /defaults/rtorrent.rc /config/rtorrent/rtorrent.rc
+
+cp -pr /config/rutorrent/settings/* /usr/share/webapps/rutorrent/conf/
+
+if [ ! -e "/config/php/php.ini" ]; then
+	cp /etc/php7/php.ini /config/php/php.ini
+	sed -i -e 's/\(register_argc_argv .*=\).*/\1 On/g' /config/php/php.ini
+fi
+
+# create symlink for webui files
+[[ ! -e /var/www/localhost/rutorrent ]] && ln -s \
+/usr/share/webapps/rutorrent /var/www/localhost/rutorrent
+
+# delete lock file if exists
+[[ -e /config/rtorrent/rtorrent_sess/rtorrent.lock ]] && \
+	rm /config/rtorrent/rtorrent_sess/rtorrent.lock
+
+# permissions
+chown abc:abc /downloads 
+
+chown -R abc:abc \
+	/config \
+	/socket \
+	/detach_sess \
+	/run \
+	/usr/share/webapps/rutorrent \
+	/var/lib/nginx \
+	/var/www/localhost/rutorrent
+
+chmod -R 755 /config/rutorrent/profiles
+chmod 644 /etc/logrotate.d/*

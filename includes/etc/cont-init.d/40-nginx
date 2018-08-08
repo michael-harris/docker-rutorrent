@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bash
+if [ ! -e "/config/nginx/conf.d/basic.conf" ] 
+  then
+    mkdir /defaults/conf.d
+    cp /defaults/conf.d/* /config/nginx/conf.d/e
+fi

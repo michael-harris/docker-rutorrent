@@ -1,0 +1,108 @@
+# Initialize plugins on rtorrent start without opening webui
+execute = {sh,-c,/usr/bin/php7 /usr/share/webapps/rutorrent/php/initplugins.php abc &}
+execute = {sh,-c,/usr/bin/php7 /usr/share/webapps/rutorrent/php/initplugins.php admin &}
+
+# Prepare rtorrent communication socket
+execute.nothrow = rm,/socket/.rtorrent.sock
+network.scgi.open_local = /socket/.rtorrent.sock
+schedule = socket_chmod,0,0,"execute=chmod,0660,/socket/.rtorrent.sock"
+schedule = socket_chgrp,0,0,"execute=chgrp,abc,/socket/.rtorrent.sock"
+
+# Directory Management
+directory.default.set = /downloads/
+session.path.set = /config/rtorrent/rtorrent_sess
+
+# Log file management
+log.open_file = "rtorrent", /config/log/rtorrent/rtorrent.log
+log.add_output = "info", "rtorrent"
+
+# General Parameters
+pieces.hash.on_completion.set = no
+dht.mode.set = auto
+dht.port.set = 6882
+protocol.pex.set = yes
+system.umask.set = 002
+encoding.add = UTF-8
+
+# Network parameters
+pieces.memory.max.set = 8192M
+throttle.max_downloads.global.set = 0
+throttle.max_uploads.global.set = 0
+throttle.min_peers.normal.set = 1
+throttle.max_peers.normal.set = 1500
+throttle.min_peers.seed.set = -1
+throttle.max_peers.seed.set = -1
+throttle.max_uploads.set = 500
+throttle.max_downloads.set = 0
+throttle.global_down.max_rate.set_kb = 0
+throttle.global_up.max_rate.set_kb = 1500
+trackers.use_udp.set = yes
+network.port_random.set = no
+network.port_range.set = 51415-51415
+network.bind_address.set = 0.0.0.0
+protocol.encryption.set = allow_incoming,try_outgoing,enable_retry
+# network.http.ssl_verify_peer.set=0
+
+# Preallocate files; reduces defragmentation on filesystems.
+system.file.allocate.set = 1
+
+# tuning parameters
+pieces.preload.type.set = 1
+# throttle.min_peers.normal.set = 10
+# throttle.max_peers.normal.set = 30
+# throttle.min_peers.seed.set = -1
+# throttle.max_peers.seed.set = -1
+# throttle.max_uploads.set = 30
+# throttle.max_uploads.global.set = 0
+# throttle.max_downloads.global.set = 3
+# # pieces.memory.max.set = 6G
+# pieces.preload.min_size.set = 262144
+# pieces.preload.min_rate.set = 5120
+# throttle.global_down.max_rate.set_kb = 0
+# throttle.global_up.max_rate.set_kb = 0
+
+# General watch directory
+schedule = watch_directory_99,5,5,"load_start=/downloads/watch/*.torrent,\"d.set_custom=auto,/downloads/\""
+
+# Stop seeding when .torrent from watch file is deleted
+schedule = untied_directory,5,5,stop_untied=
+
+# Pause torrents when free space is only 1GB 
+schedule = low_diskspace,5,60,close_low_diskspace=1024M
+
+# Move the downloaded data to the tracker directory beï¿½low Downloads
+method.set_key = event.download.finished,move_complete,"branch={$movecheck=,movedir=}"
+method.insert=movecheck,simple,"and={d.get_complete=,d.get_custom=auto}"
+method.insert=movedir,simple,"d.set_directory=$d.get_custom=auto;execute=mv,-f,$d.get_base_path=,$d.get_custom=auto"
+
+# Telegram Notifications
+#system.method.set_key = event.download.finished,push_me,"execute=/config/rtorrent/notify_telegram.sh,$d.get_name="
+
+# Commit session data
+schedule = session_save,240,300,session_save=
+
+#
+# PyroScope SETTINGS
+#
+method.insert = cfg.basedir, private|const|string, (cat,"/config/.pyroscope/")
+
+# `system.has` polyfill (the "false=" silences the `catch` command, in rTorrent-PS)
+catch = {"false=", "method.redirect=system.has,false"}
+
+# Set "pyro.extended" to 1 to activate rTorrent-PS features!
+# (the automatic way used here only works with rTorrent-PS builds after 2018-05-30)
+method.insert = pyro.extended, const|value, (system.has, rtorrent-ps)
+
+# Set "pyro.bin_dir" to the "bin" directory where you installed the pyrocore tools!
+# Make sure you end it with a "/"; if this is left empty, then the shell's path is searched.
+method.insert = pyro.bin_dir, string|const, /config/bin/
+
+# Remove the ".default" if you want to change something (else your changes
+# get over-written on update, when you put them into ``*.default`` files).
+execute.throw = (cat,(pyro.bin_dir),pyroadmin),-q,--create-import,(cat,(cfg.basedir),"rtorrent.d/*.rc")
+import = (cat,(cfg.basedir),"rtorrent.d/.import.rc")
+
+# TORQUE: Daemon watchdog schedule
+# Must be activated by touching the "~/.pyroscope/run/pyrotorque" file!
+# Set the second argument to "-v" or "-q" to change log verbosity.
+schedule = pyro_watchdog,30,300,"pyro.watchdog=~/.pyroscope,"
