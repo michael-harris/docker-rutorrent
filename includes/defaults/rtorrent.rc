@@ -41,6 +41,7 @@ network.port_random.set = no
 network.port_range.set = 51415-51415
 network.bind_address.set = 0.0.0.0
 protocol.encryption.set = allow_incoming,try_outgoing,enable_retry
+network.xmlrpc.size_limit.set = 2000000
 # network.http.ssl_verify_peer.set=0
 
 # Preallocate files; reduces defragmentation on filesystems.
