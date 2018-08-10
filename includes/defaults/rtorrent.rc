@@ -42,28 +42,15 @@ network.port_range.set = 51415-51415
 network.bind_address.set = 0.0.0.0
 protocol.encryption.set = allow_incoming,try_outgoing,enable_retry
 network.xmlrpc.size_limit.set = 2000000
-# network.http.ssl_verify_peer.set=0
 
 # Preallocate files; reduces defragmentation on filesystems.
 system.file.allocate.set = 1
 
 # tuning parameters
 pieces.preload.type.set = 1
-# throttle.min_peers.normal.set = 10
-# throttle.max_peers.normal.set = 30
-# throttle.min_peers.seed.set = -1
-# throttle.max_peers.seed.set = -1
-# throttle.max_uploads.set = 30
-# throttle.max_uploads.global.set = 0
-# throttle.max_downloads.global.set = 3
-# # pieces.memory.max.set = 6G
-# pieces.preload.min_size.set = 262144
-# pieces.preload.min_rate.set = 5120
-# throttle.global_down.max_rate.set_kb = 0
-# throttle.global_up.max_rate.set_kb = 0
 
 # General watch directory
-schedule = watch_directory_99,5,5,"load_start=/downloads/watch/*.torrent,\"d.set_custom=auto,/downloads/\""
+schedule = watch_directory_99,5,5,"load_start=/downloads/add/*.torrent,\"d.set_custom=auto,/downloads/downloading\""
 
 # Stop seeding when .torrent from watch file is deleted
 schedule = untied_directory,5,5,stop_untied=
@@ -75,9 +62,6 @@ schedule = low_diskspace,5,60,close_low_diskspace=1024M
 method.set_key = event.download.finished,move_complete,"branch={$movecheck=,movedir=}"
 method.insert=movecheck,simple,"and={d.get_complete=,d.get_custom=auto}"
 method.insert=movedir,simple,"d.set_directory=$d.get_custom=auto;execute=mv,-f,$d.get_base_path=,$d.get_custom=auto"
-
-# Telegram Notifications
-#system.method.set_key = event.download.finished,push_me,"execute=/config/rtorrent/notify_telegram.sh,$d.get_name="
 
 # Commit session data
 schedule = session_save,240,300,session_save=

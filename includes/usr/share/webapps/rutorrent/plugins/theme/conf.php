@@ -1,3 +1,3 @@
 <?php
 
-$defaultTheme = "club-QuickBox"; // May be "", "Oblivion", "Dark", "Blue" or "Acid"
+$defaultTheme = "Standard"; // May be "", "Oblivion", "Dark", "Blue" or "Acid"
